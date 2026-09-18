@@ -1,4 +1,33 @@
+<%@page import="java.sql.Connection"%>
+<%@page import="java.sql.ResultSet"%>
+<%@page import="java.sql.PreparedStatement"%>
+<%@page import="com.hexagon.model1.pool.PoolManager"%>
 <%@ page contentType="text/html; charset=UTF-8" %>
+<%! PoolManager pool = PoolManager.getInstance(); %>
+<%
+	// 게시판에 등록된 글 하나만 가져오기
+	//select * from board where
+	
+	//out, request, response등 서블릿에서 개발자가 선언해야 하는 객체들은 jsp에서는 이미 시스템에 생성되어있음
+	// 필수 객체들을 가리켜 built-in object라고 함 == 내장객체라함
+	// request 내장 객체는 서블릿의 doxxxx메서드로 전달되는 빨간 구슬인 HttpServletRequestd이다
+	// response 내장객체는 파란구슬이다
+	int board_id = Integer.parseInt(request.getParameter("x")); //"5"--> 5 로 변경하려고 할때 wrpper Integer클래스 이용
+	String sql = "select * from board where board_id="+board_id;
+	out.print(sql);
+	
+	// select문 경우 JDBC 다 필요
+	// 아래는 객체는 service() 메서드내에서 사용하므로 지역변수임. 반드시 null초기화
+	Connection con = null;
+	PreparedStatement pstmt=null;  
+	ResultSet rs=null; // 단 한건이라도 표이므로
+	
+	con=pool.getConnection(); // 풀로부터 Connection 한개 대여
+	pstmt = con.prepareStatement(sql);
+	rs = pstmt.executeQuery(); // select 실행 및 그 결과를 표에 담기
+	rs.next(); // 한건이라도 해도 커서가 레코드를 가리키고 있지 않아, 한칸 내려라
+%>
+
 <!doctype html>
 <html lang="en">
   <head>
@@ -1159,25 +1188,28 @@
                     <div class="card-title">게시판</div>
                   </div>
                   <form id="form1">
+                  <!-- 일반 유저를 위한 것이 아니라, 개발자의 필요에 의한 파라미터 전송 시 사용할 수 있는 태그인 hidden -->
+                  		<input type="hidden" name="board_id" value="<%=board_id%>" style="background:yellow">
                     <div class="card-body">
                       
                       <div class="mb-3">
-                        <input type="text" class="form-control" placeholder="제목 입력하세요.." name="title"/>
+                        <input type="text" class="form-control" value="<%=rs.getString("title") %>" name="title"/>
                       </div>
                       
                       <div class="mb-3">
-                        <input type="text" class="form-control" placeholder="작성자 입력하세요.." name="writer"/>
+                        <input type="text" class="form-control" value="<%=rs.getString("write") %>" name="writer"/>
                       </div>
                       
                       <div class="mb-3">
-                        <textarea type="text" id="editor" class="form-control" placeholder="내용을 입력하세요.." name="content"></textarea>
+                        <textarea type="text" id="editor" class="form-control" name="content"><%=rs.getString("content") %></textarea>
                       </div>
                       
                       
                     </div>
                     <div class="card-footer">
-                      <button type="button" class="btn btn-primary" id="bt_regist">글쓰기</button>
-                      <button type="button" class="btn btn-primary" id="bt_list">글목록</button>
+                      <button type="button" class="btn btn-default" id="bt_update">글수정</button>
+                      <button type="button" class="btn btn-default" id="bt_list">글목록</button>
+                      <button type="button" class="btn btn-default" id="bt_del">삭제</button>
                     </div>
                   </form>
                 </div>
@@ -1321,8 +1353,33 @@
   			$("#bt_list").click(function(){
   				$(location).attr("href", "/board/list.jsp");
   			});
+  			
+  			// 글 삭제 요청
+  			$("#bt_del").click(function(){
+  				//글 삭제 시 요청 방법을 ? GET/POST
+				//js에서 링크는 location 내장 객체의 속성인 href를 이용
+				//let ans = confirm("삭제하시겠어요?");
+				//ans가 true 이면 ..
+  				let ans = confirm("Are you sure to delete this post?");
+  				
+  				if(ans){  					
+  					location.href = "/board/delete?board_id=<%=board_id%>"; // lcation은 자바 내장객체에 존재 <a></a>와 같은 효과
+  				}
+  			});
+
+  			// 글 수정 요청
+  			$("#bt_update").click(function(){
+  				if(confirm("수정된 내용을 반영하십니까?")){  					
+  					//$("#form1").attr("action", "/board/update");
+  					//$("#form1").attr("method", "POST");
+  					
+  					$("#form1").attr({action:"/board/update", method:"POST"});
+  					$("#form1").submit();
+  				}
+  			});
 	  	});  	
   	</script>
 	  	
   </body>
 </html>
+<%pool.release(con, pstmt, rs); %>

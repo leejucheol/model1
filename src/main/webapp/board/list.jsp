@@ -1,4 +1,29 @@
+<%@page import="java.sql.ResultSet"%>
+<%@page import="java.sql.PreparedStatement"%>
+<%@page import="java.sql.Connection"%>
+<%@page import="com.hexagon.model1.pool.PoolManager"%>
 <%@ page contentType="text/html; charset=UTF-8" %>
+<%!
+	// 이 영역은 선언부라 불리며, jsp가 서블릿으로 변경되어질때, 멤버영역이 됨
+	PoolManager pool = PoolManager.getInstance(); // 싱글턴 메서드로 얻어옴
+%>
+<%
+	//이 영역은 이 jsp가 서블릿으로 변경되어질때 service()메서드가 될 스크립틀릿 영역이다.
+	//따라서 개발자는 이 영역에 로직을 작성하면 된다 ..
+	
+	Connection con = null; //접속 정보 객체
+	PreparedStatement pstmt = null; //쿼리실행 객체
+	ResultSet rs = null; //select문의 경우 표를 담게 될 객체
+	
+	con = pool.getConnection(); // 풀로부터 Connection 빌려오기
+	
+	StringBuilder sb = new StringBuilder();
+	sb.append("select board_id, title, write, created_at, hit from board order by board_id desc");
+	pstmt = con.prepareStatement(sb.toString());
+	
+	// select문 실행 및 표현 법
+	rs = pstmt.executeQuery(); //select문 수행 시엔 executeQuery()사용해야함
+%>
 <!doctype html>
 <html lang="en">
   <head>
@@ -1153,35 +1178,67 @@
               </div>
 
               <!-- Quick Example -->
-              <div class="col-md-12">
-                <div class="card card-primary card-outline mb-4">
+			<div class="card mb-4">
                   <div class="card-header">
-                    <div class="card-title">게시판</div>
+                    <h3 class="card-title">Bordered Table</h3>
                   </div>
-                  <form id="form1">
-                    <div class="card-body">
-                      
-                      <div class="mb-3">
-                        <input type="text" class="form-control" placeholder="제목 입력하세요.." name="title"/>
-                      </div>
-                      
-                      <div class="mb-3">
-                        <input type="text" class="form-control" placeholder="작성자 입력하세요.." name="writer"/>
-                      </div>
-                      
-                      <div class="mb-3">
-                        <textarea type="text" id="editor" class="form-control" placeholder="내용을 입력하세요.." name="content"></textarea>
-                      </div>
-                      
-                      
-                    </div>
-                    <div class="card-footer">
-                      <button type="button" class="btn btn-primary" id="bt_regist">글쓰기</button>
-                      <button type="button" class="btn btn-primary" id="bt_list">글목록</button>
-                    </div>
-                  </form>
+                  <!-- /.card-header -->
+                  <div class="card-body">
+                    <table class="table table-bordered" role="table">
+                      <thead>
+                        <tr>
+                          <th style="width: 10px" scope="col">#</th>
+                          <th scope="col">Title</th>
+                          <th scope="col">Writer</th>
+                          <th scope="col">Created_at</th>
+                          <th scope="col">Hit</th>
+                          <th style="width: 40px" scope="col">비고</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                      <%while(rs.next()){ %>
+                        <tr class="align-middle">
+                          <td>1.</td>
+                          <!-- POST 바식만이 서버에 데이터를 전송할 수 있는 것은 아님
+                          	즉 GET방식도 소량의 데이터는 서버에 데이터를 전송할 수 있는데, 이때 물음표 뒤에
+                          	parameter=value&parameter=value&parameter=value
+                          	contnet.jsp?board_id=3
+                           -->
+                          <td><a href="/board/content.jsp?x=<%=rs.getInt("board_id") %>"><%=rs.getString("title") %></a></td>
+                          <td><%=rs.getString("write") %></td>
+                          <td><%=rs.getString("created_at") %></td>
+                          <td><%=rs.getInt("hit") %></td>
+                        </tr>
+                      <%} %>
+                      <tr>
+                      	<td colspan="5">
+                      		<button type="button" class="btn-primary" id="bt_write">Write</button>
+                      	</td>
+                      </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <!-- /.card-body -->
+                  <div class="card-footer clearfix">
+                    <ul class="pagination pagination-sm m-0 float-end">
+                      <li class="page-item">
+                        <a class="page-link" href="#">«</a>
+                      </li>
+                      <li class="page-item">
+                        <a class="page-link" href="#">1</a>
+                      </li>
+                      <li class="page-item">
+                        <a class="page-link" href="#">2</a>
+                      </li>
+                      <li class="page-item">
+                        <a class="page-link" href="#">3</a>
+                      </li>
+                      <li class="page-item">
+                        <a class="page-link" href="#">»</a>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
-              </div>
 
             
             </div>
@@ -1303,26 +1360,15 @@
   	<script type="text/javascript">
 	  	
   		$(function(){
-  		  	//(누구를-선택자).어떻게()
-  			$("#editor").summernote({
-  				placeholder:"내용을 입력하세요",
-  				height:250
-  			});	  	
-  		  	
-  		  	// 글쓰기 버튼에 대한 이벤트 연결을 jqeury로 진행
-  		  	$("#bt_regist").click(function(){
-	  		  	//Jquery는 내부적으로 DOM을 접근할 수 있다 .. 간단한 코드로 제어가능 ..
-	  		  	$("#form1").attr("action", "/board/regist"); // <form action="/board/regist"> 와 동일
-	  		  	$("#form1").attr("method", "POST"); //<form method="POST">와 동일
-	  		  	$("#form1").submit(); //전송 메서드 !! 이 시점에 비로소 전송이 일어남 !!
-  		  	});
-  		  	
-  			// 글 목록 요청
-  			$("#bt_list").click(function(){
-  				$(location).attr("href", "/board/list.jsp");
+  			// 글쓰기 요청
+  			$("#bt_write").click(function(){  				
+  			//location.href="/board/write.jsp"; //순수 js코드 이용방법
+  			$(location).attr("href", "/board/write.jsp");
   			});
 	  	});  	
   	</script>
 	  	
   </body>
 </html>
+
+<%pool.release(con, pstmt, rs); %> //모든 db관련 자원 반납
