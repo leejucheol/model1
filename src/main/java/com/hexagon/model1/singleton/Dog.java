@@ -1,4 +1,4 @@
-package com.hexagon.modle1.singleton;
+package com.hexagon.model1.singleton;
 
 public class Dog {
 	// singleton을 구현하기 위한 첫단계(외부에서 인스턴스를 직접 생성하는 것을 막자)

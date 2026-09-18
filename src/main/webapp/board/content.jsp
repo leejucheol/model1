@@ -1197,7 +1197,7 @@
                       </div>
                       
                       <div class="mb-3">
-                        <input type="text" class="form-control" value="<%=rs.getString("write") %>" name="writer"/>
+                        <input type="text" class="form-control" value="<%=rs.getString("writer") %>" name="writer"/>
                       </div>
                       
                       <div class="mb-3">

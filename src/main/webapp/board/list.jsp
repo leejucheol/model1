@@ -1,15 +1,15 @@
-<%@page import="java.sql.ResultSet"%>
-<%@page import="java.sql.PreparedStatement"%>
-<%@page import="java.sql.Connection"%>
-<%@page import="com.hexagon.model1.pool.PoolManager"%>
+<%@page import="java.util.List"%>
+<%@page import="com.hexagon.model1.dto.Board"%>
+<%@page import="com.hexagon.model1.dao.BoardDAO"%>
 <%@ page contentType="text/html; charset=UTF-8" %>
 <%!
 	// 이 영역은 선언부라 불리며, jsp가 서블릿으로 변경되어질때, 멤버영역이 됨
-	PoolManager pool = PoolManager.getInstance(); // 싱글턴 메서드로 얻어옴
+	// PoolManager pool = PoolManager.getInstance(); // 싱글턴 메서드로 얻어옴
+	BoardDAO boardDAO = new BoardDAO();
 %>
 <%
 	//이 영역은 이 jsp가 서블릿으로 변경되어질때 service()메서드가 될 스크립틀릿 영역이다.
-	//따라서 개발자는 이 영역에 로직을 작성하면 된다 ..
+	/*따라서 개발자는 이 영역에 로직을 작성하면 된다 ..
 	
 	Connection con = null; //접속 정보 객체
 	PreparedStatement pstmt = null; //쿼리실행 객체
@@ -18,11 +18,16 @@
 	con = pool.getConnection(); // 풀로부터 Connection 빌려오기
 	
 	StringBuilder sb = new StringBuilder();
-	sb.append("select board_id, title, write, created_at, hit from board order by board_id desc");
+	sb.append("select board_id, title, writer, created_at, hit from board order by board_id desc");
 	pstmt = con.prepareStatement(sb.toString());
 	
 	// select문 실행 및 표현 법
-	rs = pstmt.executeQuery(); //select문 수행 시엔 executeQuery()사용해야함
+	rs = pstmt.executeQuery(); select문 수행 시엔 executeQuery()사용해야함
+	*/
+	
+	// List에는 Board가 여러개 들어있어, 표를 표현한 rs를 완벽히 java 언어 스타일로 표현해놓음
+	// 따라서 더이상 ResultSet을 사용하기 보다는 List를 사용해서 화면에 출력 ㄱㄱ
+	List boardList = boardDAO.selectAll();
 %>
 <!doctype html>
 <html lang="en">
@@ -1196,7 +1201,12 @@
                         </tr>
                       </thead>
                       <tbody>
-                      <%while(rs.next()){ %>
+                      <%for(int i=0; i<boardList.size(); i++){ %>
+                      <%
+                      // 컬랙션프레임워크는 개발자가 객체를 넣을때 아무런 옵션을 주지 않으면 Object자동 변환되어 들어간다
+                      // 따라서 Get() 꺼낼때는 당연히 Obgect형태로 꺼내지게 됨, 개발자는 자신이 넣은 자료형으로 형변환해서 사용하면 됨
+                      %>
+                      <% Board board = (Board)boardList.get(i);  // List에 들어있는 i번째 요소 꺼내기(우리의 경우 Board인스턴스가 꺼내짐)%>
                         <tr class="align-middle">
                           <td>1.</td>
                           <!-- POST 바식만이 서버에 데이터를 전송할 수 있는 것은 아님
@@ -1204,10 +1214,10 @@
                           	parameter=value&parameter=value&parameter=value
                           	contnet.jsp?board_id=3
                            -->
-                          <td><a href="/board/content.jsp?x=<%=rs.getInt("board_id") %>"><%=rs.getString("title") %></a></td>
-                          <td><%=rs.getString("write") %></td>
-                          <td><%=rs.getString("created_at") %></td>
-                          <td><%=rs.getInt("hit") %></td>
+                          <td><a href="/board/content.jsp?x=<%=board.getBoardId() %>"><%=board.getTitle()%></a></td>
+                          <td><%=board.getWriter()%></td>
+                          <td><%=board.getCreatedAt()%></td>
+                          <td><%=board.getHit()%></td>
                         </tr>
                       <%} %>
                       <tr>
@@ -1370,5 +1380,3 @@
 	  	
   </body>
 </html>
-
-<%pool.release(con, pstmt, rs); %> //모든 db관련 자원 반납

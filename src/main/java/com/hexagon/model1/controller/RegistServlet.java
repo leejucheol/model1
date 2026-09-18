@@ -11,13 +11,15 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.hexagon.model1.dao.BoardDAO;
+import com.hexagon.model1.dto.Board;
 import com.hexagon.model1.pool.PoolManager;
 
 /* 글쓰기 요청을 처리할 서블릿*/
 /* JSP도 서블릿이기 때문에 당연히 글쓰기 요청을 받을 수는 있으나, 업무 목적상 디자인이 관려되지 않는다면 굳이 jsp를 쓰게되면
  * 다른 개발자들이 디자인이 포함되어 있는줄 알고 혼동*/
 public class RegistServlet extends HttpServlet {
-	PoolManager pool = PoolManager.getInstance();
+	BoardDAO boardDAO = new BoardDAO();
 
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -34,31 +36,17 @@ public class RegistServlet extends HttpServlet {
 		System.out.println(writer);
 		System.out.println(content);
 		
-		/*
-		 * 1. 드라이버 접속
-		 * 2. 연결 
-		 * 1,2는 안해도됨
-		 * 
-		 * 이 시점 부터는 오라클 직접 접속하거나, 해제하는 작업은 불필요
-		 * PoolManager이 Tomcat의 커넥션풀로부터 Connection을 얻거나 (getConnection())
-		 * 돌려보내준다 (release())
-		 * */
-		Connection con = pool.getConnection(); // 풀로부터 커넥션 한개 빌려오기
+		// DB에 넣기
+		// 파라미터들을 DAO에 전달할때 낱개말고 바구니에 담아서 바구니 자체를 전달(배열보다 훨씬 직관성있음)
+		Board board = new Board();
+		board.setTitle(title);
+		board.setWrite(writer);
+		board.setContent(content);
 		
-		//2. 쿼리 수행
-		PreparedStatement pstmt=null;
-		StringBuilder sb = new StringBuilder(); //StringBuffer는 thread 안전을 위해 안전장치가 있으므로 속도가 느림
-		sb.append("insert into board(board_id, title, write, content) values(seq_board.nextval,?,?,?)");
-		
-		try {
-			pstmt = con.prepareStatement(sb.toString()); // 쿼리수행 객체를 생성
-			pstmt.setString(1, title);
-			pstmt.setString(2, writer);
-			pstmt.setString(3, content);
+		int rowCount = boardDAO.insert(board);
 			
-			int rowCount = pstmt.executeUpdate(); // 실행 DML이기 때문. insert문의 경우 성공시 반영된 레코드 수는 1개이므로 1이 반환
-												// 만일 0이 반환되면 insert 실패
-			// 응답정보 만들기
+		// 아래코드는 디자인과 관련되어 있어 DB에 먼저 넣고 실행
+		// 응답정보 만들기
 			response.setContentType("text/html; charset=UTF-8");
 			PrintWriter out = response.getWriter();
 			
@@ -78,11 +66,5 @@ public class RegistServlet extends HttpServlet {
 			tag.append("</script>");
 			
 			out.print(tag.toString());
-			
-		} catch (SQLException e) {
-			e.printStackTrace();
-		} finally {	
-			pool.release(con,pstmt);
-		}
 	}
 }

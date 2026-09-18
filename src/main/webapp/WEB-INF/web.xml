@@ -31,4 +31,4 @@
 		<servlet-name>updateServlet</servlet-name>
 		<url-pattern>/board/update</url-pattern>
 	</servlet-mapping>
-</web-app>
+</web-app>	

@@ -1,4 +1,4 @@
-package com.hexagon.modle1.singleton;
+package com.hexagon.model1.singleton;
 
 public class UseDog {
 
