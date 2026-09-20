@@ -27,7 +27,7 @@ public class BoardDAO {
 		PreparedStatement pstmt=null;
 		
 		con = pool.getConnection();
-		String sql="insert into board (board_id, title, write, content) values(seq_board.nextval,?,?,?)";
+		String sql="insert into board (board_id, title, writer, content) values(seq_board.nextval,?,?,?)";
 		
 		int rowCount=0; // return 하기 위한 변수
 		
